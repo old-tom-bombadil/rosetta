@@ -3,7 +3,7 @@
 ;; construction
 (define  (make-path start end cost) (list start '-> end cost))
 ;; deconstruction
-(define (start-node branch) (first branch))
+(define (start-node branch) (if (null? branch) '() (first branch)))
 (define (end-node branch) (third branch))
 (define (branch-cost branch) (if (null? branch)0 (fourth branch)))
 
@@ -18,12 +18,19 @@
    (list-transform-positive paths (lambda (br)(equal? node (start-node br))) ) 
 )
 
+(define (augment-path p1 p2)
+  (if (null? p1) 
+      p2
+      (cons (cons (start-node p1) (start-node p2)) (cdr p2)))
+)
+
+
 ;; SETI ((a->c) (b->d) (f->g)
 ;; SETII ((c->e) (d->e) )
 (define (calc-node-and-branch-cost  setII-branches setI)
   (cond ((null? setII-branches) '())
         (#t (let* ((br (car setII-branches)) (path (find-path-to (start-node br) setI )) )
-              (cons (list (+ (branch-cost path) (branch-cost br)) (end-node br) br ) (calc-node-and-branch-cost (cdr setII-branches) setI) )
+              (cons (list (+ (branch-cost path) (branch-cost br)) (end-node br) (augment-path path br) ) (calc-node-and-branch-cost (cdr setII-branches) setI) )
               ) ))
  )
 
@@ -63,8 +70,6 @@
    (delete-member-procedure list-deletor path-equal?))
 
 
-
-
 (define (cpath->node cpath)  (second cpath))
 
 ;Value: (((12 e (c -> e 4)) (11 e (d -> e 8))))
@@ -93,7 +98,7 @@
    (cons node (first w)) 
    (delete node (second w) )
    (third w)
-   (cons new-path (fourth w))
+   (cons new-path (I-Paths w))
    (path-delq new-path (fifth w))
    (sixth w)
    )
